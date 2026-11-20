@@ -104,6 +104,8 @@ input.code{font-family:'Bebas Neue';font-size:30px;width:150px;text-align:center
   <label>Volume <input type="range" id="sVol" min="0" max="1" step="0.05"></label>
   <label>Touch button size <input type="range" id="sBtn" min="44" max="96" step="2"></label>
   <label>Invert Y <input type="checkbox" id="sInv"></label>
+  <label>PS1 mode (reloads) <input type="checkbox" id="sPs1"></label>
+  <label>PS1 resolution (reloads) <input type="range" id="sRes" min="180" max="480" step="30"></label>
   <label>High graphics <input type="checkbox" id="sHi"></label>
   <label>Show FPS <input type="checkbox" id="sFps"></label>
   <div class="row"><button class="btn" id="bSetOk">RESUME</button><button class="btn alt" id="bLeave">LEAVE</button></div>
@@ -122,7 +124,7 @@ const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>v<a?a:v>b?
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 
 /* ---------- settings ---------- */
-const SET=Object.assign({sens:1,tsens:1,fov:80,vol:.7,btn:64,inv:false,hi:!TOUCH,fps:false},(()=>{try{return JSON.parse(localStorage.getItem('mamakSet'))||{}}catch(e){return{}}})());
+const SET=Object.assign({ps1:true,ps1res:240,sens:1,tsens:1,fov:80,vol:.7,btn:64,inv:false,hi:!TOUCH,fps:false},(()=>{try{return JSON.parse(localStorage.getItem('mamakSet'))||{}}catch(e){return{}}})());
 function saveSet(){try{localStorage.setItem('mamakSet',JSON.stringify(SET))}catch(e){}}
 
 /* ---------- data ---------- */
@@ -176,11 +178,13 @@ function startAmb(){ambG.traffic=loopNoise('lowpass',260,.7,.05);ambG.sizzle=loo
 function say(txt){if(!window.speechSynthesis||SET.vol<=0)return;try{const u=new SpeechSynthesisUtterance(txt);u.rate=1.08;u.volume=SET.vol;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 
 /* ---------- three setup ---------- */
-const renderer=new THREE.WebGLRenderer({antialias:SET.hi,powerPreference:'high-performance'});
+if(SET.ps1){const g=SET.ps1res;THREE.ShaderChunk.project_vertex+=`\n{vec2 G=vec2(${g*4/3}.,${g}.)*.5;gl_Position.xy=floor(gl_Position.xy/gl_Position.w*G+.5)/G*gl_Position.w;}`;
+ THREE.ShaderChunk.dithering_fragment=`{float b[16];b[0]=0.;b[1]=8.;b[2]=2.;b[3]=10.;b[4]=12.;b[5]=4.;b[6]=14.;b[7]=6.;b[8]=3.;b[9]=11.;b[10]=1.;b[11]=9.;b[12]=15.;b[13]=7.;b[14]=13.;b[15]=5.;ivec2 p=ivec2(mod(gl_FragCoord.xy,4.));float d=0.;for(int i=0;i<16;i++){if(i==p.y*4+p.x)d=b[i];}gl_FragColor.rgb=floor(gl_FragColor.rgb*31.+d/16.)/31.;}`;}
+const renderer=new THREE.WebGLRenderer({antialias:SET.hi&&!SET.ps1,powerPreference:'high-performance'});
 document.body.appendChild(renderer.domElement);
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1226);scene.fog=new THREE.Fog(0x0a1226,25,90);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1226);scene.fog=new THREE.Fog(0x0a1226,SET.ps1?14:25,SET.ps1?55:90);
 const camera=new THREE.PerspectiveCamera(SET.fov,1,.05,200);scene.add(camera);
-function applyGfx(){renderer.setPixelRatio(SET.hi?Math.min(devicePixelRatio,1.75):Math.min(devicePixelRatio,1)*.8);renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.fov=SET.fov;camera.updateProjectionMatrix();document.documentElement.style.setProperty('--bs',SET.btn+'px');if(MG)MG.gain.value=SET.vol;$('#fps').classList.toggle('hid',!SET.fps);}
+function applyGfx(){if(SET.ps1){const k=SET.ps1res/innerHeight;renderer.setPixelRatio(1);renderer.setSize(Math.round(innerWidth*k),SET.ps1res,false);const c=renderer.domElement.style;c.width='100vw';c.height='100vh';c.imageRendering='pixelated';}else{renderer.setPixelRatio(SET.hi?Math.min(devicePixelRatio,1.75):Math.min(devicePixelRatio,1)*.8);renderer.setSize(innerWidth,innerHeight);}camera.aspect=innerWidth/innerHeight;camera.fov=SET.fov;camera.updateProjectionMatrix();document.documentElement.style.setProperty('--bs',SET.btn+'px');if(MG)MG.gain.value=SET.vol;$('#fps').classList.toggle('hid',!SET.fps);}
 addEventListener('resize',applyGfx);
 scene.add(new THREE.HemisphereLight(0x8fa3d6,0x2a2018,.75));scene.add(new THREE.AmbientLight(0xffffff,.18));
 function pl(c,i,d,x,y,z){const l=new THREE.PointLight(c,i,d,1.5);l.position.set(x,y,z);scene.add(l);return l;}
@@ -193,7 +197,7 @@ const COLS=[];
 function addCol(x,z,w,d,ry){if(ry){const c=Math.abs(Math.cos(ry)),s=Math.abs(Math.sin(ry));[w,d]=[w*c+d*s,w*s+d*c];}COLS.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});}
 function B(w,h,d,c,x,y,z,p,ry){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),typeof c==='string'||typeof c==='number'?mat(c):c);m.position.set(x,y,z);if(ry)m.rotation.y=ry;(p||STATIC).add(m);return m;}
 function C(rt,rb,h,c,x,y,z,p,seg){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||8),typeof c==='string'||typeof c==='number'?mat(c):c);m.position.set(x,y,z);(p||STATIC).add(m);return m;}
-function ctex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');fn(g,w,h);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
+function ctex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');fn(g,w,h);const t=new THREE.CanvasTexture(c);if(SET.ps1){t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;}else t.anisotropy=4;return t;}
 function tmat(t,basic){return basic?new THREE.MeshBasicMaterial({map:t}):new THREE.MeshLambertMaterial({map:t});}
 function plane(w,h,m,x,y,z,ry,p){const g=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);g.position.set(x,y,z);g.rotation.y=ry||0;(p||scene).add(g);return g;}
 
@@ -336,7 +340,7 @@ function makeChar(o){
  const c={root,body,legs,arms,headG,H,legL,props:{},t:Math.random()*10,shadow,eye:H*.93};
  scene.add(root);return c;
 }
-function heroChar(i){const h=HEROES[i],f=FACES[h.id];if(!FACE_T[h.id]){const im=new Image();im.src=f.img;FACE_T[h.id]=new THREE.Texture(im);im.onload=()=>FACE_T[h.id].needsUpdate=true;}
+function heroChar(i){const h=HEROES[i],f=FACES[h.id];if(!FACE_T[h.id]){const im=new Image();im.src=f.img;FACE_T[h.id]=new THREE.Texture(im);if(SET.ps1){FACE_T[h.id].magFilter=FACE_T[h.id].minFilter=THREE.NearestFilter;FACE_T[h.id].generateMipmaps=false;}im.onload=()=>FACE_T[h.id].needsUpdate=true;}
  return makeChar({h:h.h,skin:f.skin,face:FACE_T[h.id],shirtT:shirtTex(h.shirt,SHIRT_BASE[h.shirt]),pants:h.pants,hair:h.hair,hairV:h.hairV,shorts:h.id==='heng'||h.id==='yaoquan'});}
 // pose: {sit, walk(speed 0..), emote, et}
 function poseChar(c,st,dt){
@@ -617,7 +621,8 @@ addEventListener('keydown',e=>{au();if(!inGame)return;
 addEventListener('keyup',e=>{KEYS[e.code]=false;});
 function openChat(){chatOpen=true;$('#chatin').classList.remove('hid');$('#chatin').value='';$('#chatin').focus();unlock();}
 function closeChat(){chatOpen=false;$('#chatin').blur();$('#chatin').classList.add('hid');setTimeout(lock,50);}
-function openSettings(){$('#sSens').value=SET.sens;$('#sTSens').value=SET.tsens;$('#sFov').value=SET.fov;$('#sVol').value=SET.vol;$('#sBtn').value=SET.btn;$('#sInv').checked=SET.inv;$('#sHi').checked=SET.hi;$('#sFps').checked=SET.fps;openModal('#setM');}
+function openSettings(){$('#sSens').value=SET.sens;$('#sTSens').value=SET.tsens;$('#sFov').value=SET.fov;$('#sVol').value=SET.vol;$('#sBtn').value=SET.btn;$('#sInv').checked=SET.inv;$('#sHi').checked=SET.hi;$('#sFps').checked=SET.fps;$('#sPs1').checked=SET.ps1;$('#sRes').value=SET.ps1res;openModal('#setM');}
+$('#sPs1').onchange=e=>{SET.ps1=e.target.checked;saveSet();location.reload();};$('#sRes').onchange=e=>{SET.ps1res=+e.target.value;saveSet();location.reload();};
 ['sSens:sens','sTSens:tsens','sFov:fov','sVol:vol','sBtn:btn','sInv:inv','sHi:hi','sFps:fps'].forEach(s=>{const[id,k]=s.split(':');$('#'+id).addEventListener('input',e=>{const el=e.target;SET[k]=el.type==='checkbox'?el.checked:+el.value;saveSet();applyGfx();});});
 $('#bSetOk').onclick=()=>{closeModals();lock();};$('#bLeave').onclick=()=>location.reload();
 $('#emList').innerHTML=EMOTES.map((e,i)=>`<span class="it" data-e="${e[0]}">${i+1}. ${e[1]}</span>`).join('');$('#emList').onclick=e=>{const t=e.target.closest('.it');if(t){emote(t.dataset.e);closeModals();lock();}};
