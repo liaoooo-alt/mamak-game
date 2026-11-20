@@ -330,35 +330,35 @@ function shadeTex(col){return ctex(32,32,(g,w,h)=>{g.fillStyle=col;g.fillRect(0,
 function lc(rt,rb,h,m,x,y,z,p,seg,sz){const g=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||6,1,false,Math.PI,TAU),m);g.position.set(x,y,z);if(sz)g.scale.z=sz;p.add(g);return g;}
 function makeChar(o){
  const H=o.h,root=new THREE.Group(),body=new THREE.Group();root.add(body);
- const legL=H*.48,thigh=H*.245,shin=H*.235,torso=H*.3;
+ const legL=H*.48,thigh=H*.245,shin=H*.235,torso=H*.28;
  const skin=cmat(0,shadeTex(o.skin)),pants=cmat(0,pantsTex(o.pants)),shirtM=o.shirtT?cmat(0,o.shirtT):cmat(o.shirt||'#888'),shoe=cmat(o.shoe||'#222');
+ const slvM=o.sleeve?cmat(0,shadeTex(o.sleeve)):shirtM;
  const mk=(parent,x,y,z)=>{const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g};
- const legs=[];for(const s of[-1,1]){const hip=mk(body,s*H*.058,legL,0);lc(H*.062,H*.045,thigh,pants,0,-thigh/2,0,hip,6);const knee=mk(hip,0,-thigh,0);
-  lc(H*.046,H*.033,shin,o.shorts?skin:pants,0,-shin/2,0,knee,6);if(o.shorts)lc(H*.064,H*.06,H*.035,pants,0,H*.01,0,knee,6);
-  B(H*.06,H*.04,H*.15,shoe,0,-shin-H*.005,H*.03,knee);legs.push({hip,knee});}
- lc(H*.105,H*.1,H*.09,pants,0,legL+H*.02,0,body,7,.62);
- lc(H*.13,H*.098,torso,shirtM,0,legL+H*.06+torso/2,0,body,8,.58);
- const top=legL+H*.06+torso;
- const arms=[];for(const s of[-1,1]){const sh=mk(body,s*H*.135,top-H*.025,0);
-  if(o.longSleeve){lc(H*.042,H*.034,H*.18,shirtM,0,-H*.09,0,sh,6);lc(H*.035,H*.028,H*.16,shirtM,0,-H*.25,0,sh,6);}
-  else{lc(H*.045,H*.04,H*.08,shirtM,0,-H*.035,0,sh,6);lc(H*.036,H*.03,H*.11,skin,0,-H*.125,0,sh,6);lc(H*.032,H*.025,H*.16,skin,0,-H*.25,0,sh,6);}
-  B(H*.035,H*.08,H*.05,skin,0,-H*.37,0,sh);const hand=mk(sh,0,-H*.37,0);arms.push({sh,hand});}
- lc(H*.03,H*.035,H*.05,skin,0,top+H*.02,0,body,6);
- const hr=H*.052,hh=H*.13;const headG=mk(body,0,top+H*.04+hh/2,0);
- const hd=lc(hr,hr*.72,hh,skin,0,0,0,headG,8);hd.scale.set(.92,1,1.05);
- const cap=new THREE.Mesh(new THREE.SphereGeometry(hr,8,4,0,TAU,0,Math.PI/2),skin);cap.scale.set(.92,.55,1.05);cap.position.y=hh/2;headG.add(cap);
- sph(hr*.25,skin,-hr*.92,0,-hr*.1,headG,.45,1,.8);sph(hr*.25,skin,hr*.92,0,-hr*.1,headG,.45,1,.8);
- if(o.face){const fg=new THREE.Mesh(new THREE.CylinderGeometry(hr*1.01,hr*.73,hh*1.0,8,1,true,-1.18,2.36),new THREE.MeshLambertMaterial({map:o.face,flatShading:true}));fg.scale.set(.93,1,1.07);headG.add(fg);}
- if(!o.bald){const hm=cmat(o.hair||'#141010'),hv=o.hairV||1;const hc=new THREE.Mesh(new THREE.SphereGeometry(hr*1.08,8,4,0,TAU,0,Math.PI/2),hm);hc.scale.set(.93,.62*hv,1.1);hc.position.y=hh*.42;headG.add(hc);
-  const back=new THREE.Mesh(new THREE.CylinderGeometry(hr*1.06,hr*.95,hh*.7,8,1,true,Math.PI/2+.45,Math.PI-.9),hm);back.scale.set(.93,1,1.08);back.position.y=hh*.12;headG.add(back);}
- if(o.apron){const ap=lc(H*.133,H*.12,torso*.6+thigh*.6,cmat(o.apron),0,legL+torso*.1,0,body,8,.62);}
+ const legs=[];for(const s of[-1,1]){const hip=mk(body,s*H*.062,legL,0);lc(H*.072,H*.05,thigh,pants,0,-thigh/2,0,hip,6);const knee=mk(hip,0,-thigh,0);
+  lc(H*.05,H*.036,shin,o.shorts?skin:pants,0,-shin/2,0,knee,6);if(o.shorts)lc(H*.072,H*.068,H*.035,pants,0,H*.01,0,knee,6);
+  B(H*.062,H*.042,H*.155,shoe,0,-shin-H*.005,H*.03,knee);legs.push({hip,knee});}
+ lc(H*.115,H*.11,H*.09,pants,0,legL+H*.02,0,body,7,.64);
+ const tb=legL+H*.06;lc(H*.148,H*.104,torso,shirtM,0,tb+torso/2,0,body,8,.64);
+ const top=tb+torso;lc(H*.05,H*.148,H*.05,shirtM,0,top+H*.02,0,body,8,.62);
+ const arms=[];for(const s of[-1,1]){const sh=mk(body,s*H*.138,top-H*.03,0);sph(H*.055,slvM,0,-H*.015,0,sh,1,1.1,.95);
+  if(o.longSleeve){lc(H*.056,H*.045,H*.17,slvM,0,-H*.09,0,sh,6);lc(H*.047,H*.035,H*.16,slvM,0,-H*.25,0,sh,6);}
+  else{lc(H*.058,H*.052,H*.08,slvM,0,-H*.04,0,sh,6);lc(H*.05,H*.04,H*.1,skin,0,-H*.13,0,sh,6);lc(H*.045,H*.031,H*.16,skin,0,-H*.255,0,sh,6);}
+  B(H*.038,H*.085,H*.055,skin,0,-H*.37,0,sh);const hand=mk(sh,0,-H*.37,0);arms.push({sh,hand});}
+ lc(H*.038,H*.044,H*.05,skin,0,top+H*.035,0,body,6);
+ const hr=H*.062,hh=H*.142;const headG=mk(body,0,top+H*.045+hh/2,0);
+ const hd=lc(hr,hr*.66,hh,skin,0,0,0,headG,8);hd.scale.set(.9,1,1.08);
+ const cap=new THREE.Mesh(new THREE.SphereGeometry(hr,8,4,0,TAU,0,Math.PI/2),skin);cap.scale.set(.9,.55,1.08);cap.position.y=hh/2;headG.add(cap);
+ sph(hr*.25,skin,-hr*.9,0,-hr*.1,headG,.45,1,.8);sph(hr*.25,skin,hr*.9,0,-hr*.1,headG,.45,1,.8);
+ if(o.face){const fg=new THREE.Mesh(new THREE.CylinderGeometry(hr*1.015,hr*.675,hh,8,1,true,-1.2,2.4),new THREE.MeshLambertMaterial({map:o.face,emissive:0x555555,emissiveMap:o.face,flatShading:true}));fg.scale.set(.91,1,1.09);headG.add(fg);}
+ if(!o.bald){const hm=cmat(o.hair||'#141010'),hv=o.hairV||1;const hc=new THREE.Mesh(new THREE.SphereGeometry(hr*1.12,8,5,0,TAU,0,Math.PI/2),hm);hc.scale.set(.93,.8*hv,1.12);hc.position.y=hh*.4;headG.add(hc);
+  const back=new THREE.Mesh(new THREE.CylinderGeometry(hr*1.08,hr*.9,hh*.75,8,1,true,Math.PI/2+.45,Math.PI-.9),hm);back.scale.set(.93,1,1.1);back.position.y=hh*.05;headG.add(back);}
+ if(o.apron){lc(H*.152,H*.12,torso*.6+thigh*.6,cmat(o.apron),0,legL+torso*.1,0,body,8,.66);}
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(H*.2,14),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.4,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;root.add(shadow);
- const c={root,body,legs,arms,headG,H,legL,props:{},t:Math.random()*10,shadow};
- scene.add(root);return c;
+ const c={root,body,legs,arms,headG,H,legL,props:{},t:Math.random()*10,shadow};scene.add(root);return c;
 }
 const FACE_T={};
 function heroChar(i){const h=HEROES[i],f=FACES[h.id];if(!FACE_T[h.id])FACE_T[h.id]=faceTexFrom(f.img,f.skin);
- return makeChar({h:h.h,skin:f.skin,face:FACE_T[h.id],shirtT:shirtTex(h.shirt,SHIRT_BASE[h.shirt]),pants:h.pants,hair:h.hair,hairV:h.hairV,shorts:h.id==='heng'||h.id==='yaoquan',longSleeve:h.shirt==='jacket'});}
+ return makeChar({h:h.h,skin:f.skin,face:FACE_T[h.id],shirtT:shirtTex(h.shirt,SHIRT_BASE[h.shirt]),pants:h.pants,hair:h.hair,hairV:h.hairV,shorts:h.id==='heng'||h.id==='yaoquan',longSleeve:h.shirt==='jacket',sleeve:h.shirt==='jacket'?'#77756c':null});}
 // pose: {sit, walk(speed 0..), emote, et}
 function poseChar(c,st,dt){
  c.t+=dt;const L=c.legs,A=c.arms,t=c.t;let bodyY=0,legR=[0,0],kneeR=[0,0],armX=[0,0],armZ=[0,0];
